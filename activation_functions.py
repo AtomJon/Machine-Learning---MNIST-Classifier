@@ -1,4 +1,4 @@
-from torch import Tensor
+from torch import Size, Tensor
 import torch
 import torch.nn.functional as F
 
@@ -18,3 +18,23 @@ def dropout(x: Tensor, training: bool, p = 0.5):
 
     # Apply acitvation matrix and return
     return activation_matrix * x
+
+# Maxpool activation function. Isolates the largest entry per kernel_size * kernel_size. Stride = 2 halves the output tensor height and width.
+# https://pytorch.org/docs/stable/generated/torch.nn.MaxPool2d.html
+def max_pool2d(x: Tensor, kernel_size: int = 2, stride: int = 2):    
+    n_rows = ((x.size(2) - (kernel_size - 1) ) // stride) + 1
+    n_columns = ((x.size(3) - (kernel_size - 1) ) // stride) + 1
+
+    output = torch.empty(Size((x.size(0), x.size(1), n_rows, n_columns)), device=x.device)
+
+    for batch_index in range(x.size(0)):
+        for features_index in range(x.size(1)):
+            features = x[batch_index, features_index]
+
+            for row in range(n_rows):
+                for column in range(n_columns):
+                    feature_row_index = row * stride
+                    feature_column_index = column * stride
+                    output[batch_index, features_index, row, column] = features[feature_row_index:feature_row_index + kernel_size, feature_column_index:feature_column_index + kernel_size].max()
+
+    return output
