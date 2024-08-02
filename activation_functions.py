@@ -1,4 +1,4 @@
-from torch import Size, Tensor
+from torch import Size, Tensor, exp
 import torch
 import torch.nn.functional as F
 
@@ -38,3 +38,16 @@ def max_pool2d(x: Tensor, kernel_size: int = 2, stride: int = 2):
                     output[batch_index, features_index, row, column] = features[feature_row_index:feature_row_index + kernel_size, feature_column_index:feature_column_index + kernel_size].max()
 
     return output
+
+# Applies the mathmatically equivalent to log(softmax(x)) across specified dimension, useful for capping the output neurons of a classification model.
+def log_softmax(x: Tensor, dim: int):
+    out = torch.empty(x.size(), device=x.device)
+    
+    if dim > 0:
+        for i, row in enumerate(x):
+            out[i] = log_softmax(row, dim - 1)
+        return out
+    else:
+        b = torch.max(x)
+        y = exp(x - b)
+        return y / y.sum()
